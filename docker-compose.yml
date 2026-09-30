@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: swibit_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-swibit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swibit}
+      POSTGRES_DB: ${POSTGRES_DB:-swibit_catalog}
+    ports:
+      # Exposed so you can run the API locally against the containerised DB.
+      # Host port defaults to 5433 because a native Postgres often already
+      # owns 5432. Container-internal port stays 5432 (that is what the API
+      # connects to over the compose network).
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - swibit_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-swibit} -d ${POSTGRES_DB:-swibit_catalog}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: swibit_api
+    environment:
+      # "db" is the compose service name, resolved by Docker's internal DNS.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-swibit}:${POSTGRES_PASSWORD:-swibit}@db:5432/${POSTGRES_DB:-swibit_catalog}
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-change-me-in-production}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+      EXPORT_DIR: /app/exports
+      # Inside the container the database is the `db` service, not localhost,
+      # so `docker compose exec api pytest` needs its own URL.
+      TEST_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-swibit}:${POSTGRES_PASSWORD:-swibit}@db:5432/swibit_catalog_test
+    volumes:
+      # Generated exports survive a container restart.
+      - swibit_exports:/app/exports
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  swibit_pgdata:
+  swibit_exports:

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment
+.env
+
+# Generated exports
+exports/
+*.csv
+
+# The task brief must not be published while the application is active.
+SwibitBackendEngineer.txt
+*.pdf
+
+# Local scratch copies of the docs (identical to the .md originals)
+README.txt
+DESIGN.txt
+TESTING.txt
+env-example.txt
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
