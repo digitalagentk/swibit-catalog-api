@@ -1,7 +1,9 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: swibit_db
+    # No `container_name:` on purpose. Compose derives container names from the
+    # project name (the directory), so a second checkout, or a project that
+    # already has these containers, cannot collide on a fixed name.
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-swibit}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swibit}
@@ -26,7 +28,6 @@ services:
 
   api:
     build: .
-    container_name: swibit_api
     environment:
       # "db" is the compose service name, resolved by Docker's internal DNS.
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-swibit}:${POSTGRES_PASSWORD:-swibit}@db:5432/${POSTGRES_DB:-swibit_catalog}
