@@ -22,7 +22,7 @@ needed - Python, dependencies and the database all come from the containers.
 
 ```bash
 git clone https://github.com/digitalagentk/swibit-catalog-api.git
-cd Swibit_Catalog
+cd swibit-catalog-api
 cp .env.example .env          # optional: edit to change ports/secrets
 docker compose up --build
 ```
