@@ -19,7 +19,7 @@ Prerequisites: Docker Desktop (with Compose v2) running. Nothing else is
 needed - Python, dependencies and the database all come from the containers.
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/digitalagentk/swibit-catalog-api.git
 cd Swibit_Catalog
 cp .env.example .env          # optional: edit to change ports/secrets
 docker compose up --build
