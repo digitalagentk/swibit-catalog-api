@@ -46,7 +46,7 @@ from sqlalchemy.orm import (
 DEFAULT_DATABASE_URL = "postgresql+psycopg://swibit:swibit@localhost:5433/swibit_catalog"
 
 
-class TaskStatus(str, enum.Enum):
+class TaskStatus(enum.StrEnum):
     """Allowed values for ``Task.status`` (an Item's status/category)."""
 
     TODO = "todo"
@@ -54,7 +54,7 @@ class TaskStatus(str, enum.Enum):
     DONE = "done"
 
 
-class GoalStatus(str, enum.Enum):
+class GoalStatus(enum.StrEnum):
     """Allowed values for ``Goal.status`` (a List's own lifecycle)."""
 
     ACTIVE = "active"
@@ -63,7 +63,7 @@ class GoalStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
-class ExportStatus(str, enum.Enum):
+class ExportStatus(enum.StrEnum):
     """Lifecycle of a background export job."""
 
     PENDING = "pending"
@@ -107,7 +107,7 @@ class User(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    goals: Mapped[list["Goal"]] = relationship(
+    goals: Mapped[list[Goal]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -138,8 +138,8 @@ class Goal(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    user: Mapped["User"] = relationship(back_populates="goals")
-    tasks: Mapped[list["Task"]] = relationship(
+    user: Mapped[User] = relationship(back_populates="goals")
+    tasks: Mapped[list[Task]] = relationship(
         back_populates="goal", cascade="all, delete-orphan"
     )
 
@@ -169,7 +169,7 @@ class Task(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    goal: Mapped["Goal"] = relationship(back_populates="tasks")
+    goal: Mapped[Goal] = relationship(back_populates="tasks")
 
 
 class ExportJob(Base):
@@ -208,8 +208,8 @@ class ExportJob(Base):
         onupdate=func.now(),
     )
 
-    goal: Mapped["Goal"] = relationship()
-    user: Mapped["User"] = relationship()
+    goal: Mapped[Goal] = relationship()
+    user: Mapped[User] = relationship()
 
 
 # The engine is lazy: it only opens a socket on the first real query, so

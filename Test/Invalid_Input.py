@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from Test.conftest import create_item, create_list
 from Main.Database_Manager import GOAL_STATUS_VALUES, TASK_STATUS_VALUES
+from Test.conftest import create_item, create_list
 
 
 def _fields(response) -> set[str]:

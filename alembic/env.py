@@ -1,6 +1,5 @@
 """Alembic environment, wired to the application's models and DATABASE_URL."""
 
-import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path

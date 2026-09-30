@@ -1,5 +1,7 @@
 # Swibit Catalog API
 
+[![CI](https://github.com/digitalagentk/swibit-catalog-api/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalagentk/swibit-catalog-api/actions/workflows/ci.yml)
+
 A **Personal Catalog API**: every user owns *lists*, every list contains *items*,
 and any list can be exported to a CSV file by a background job.
 
@@ -100,6 +102,14 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 Expected result: **82 passed**. The modules map 1:1 onto the required
 behaviours - see `TESTING.md`.
+
+Static checks run the same way the CI workflow runs them:
+
+```bash
+.venv/bin/ruff check .    # lint   (exits 0, no findings)
+.venv/bin/python -m compileall -q Main Test
+.venv/bin/alembic check   # models and migrations agree
+```
 
 ---
 
@@ -315,7 +325,37 @@ Reasoning for the layout is in `DESIGN.md` § Project structure.
 
 ## Bonus
 
-No bonus item was attempted - the core requirements were prioritised.
+### CI/CD - GitHub Actions
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main`:
+
+| Step | Catches |
+|---|---|
+| `ruff check .` | unused imports, undefined names, import order, bug-prone constructs |
+| `python -m compileall -q Main Test` | syntax errors |
+| `alembic upgrade head` | a migration that does not apply to a clean database |
+| `alembic check` | a model edited **without** a matching migration |
+| `pytest` | all 82 tests, against a real PostgreSQL 16 service container |
+
+Design points:
+
+- **A real database, not a mock or SQLite.** The service container is
+  `postgres:16-alpine` with a `pg_isready` healthcheck, so the suite exercises
+  the same engine, cascades, and CHECK constraints as production.
+- **`alembic check` is the step I care most about.** It autogenerates against
+  the live schema and fails if anything differs, so a model change cannot reach
+  `main` without a migration to go with it.
+- **Pinned tooling.** `requirements.txt` pins `ruff` alongside the test deps, so
+  CI, the container, and a local checkout all lint identically.
+- **Superseded runs are cancelled** via `concurrency`, so a rapid series of
+  pushes does not queue up runners.
+- The workflow requests only `contents: read`; it has no write scopes and no
+  secrets beyond a throwaway `JWT_SECRET` scoped to the job.
+
+Ruff is configured in `pyproject.toml` rather than run with defaults, with the
+two deliberate exclusions documented there: FastAPI's `Depends()`/`Query()`
+defaults (`B008`, the framework's idiom) and Alembic's generated migration
+files, which are not hand-edited.
 
 ## AI Tools Used
 

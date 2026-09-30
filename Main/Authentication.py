@@ -12,7 +12,7 @@ plaintext. Sessions are stateless JWTs (HS256) presented as
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 
 import bcrypt
@@ -67,7 +67,7 @@ def _dummy_hash() -> str:
 
 def create_access_token(user: User) -> str:
     """Issue a signed, time-limited JWT identifying ``user``."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": str(user.user_id),
         "iat": int(now.timestamp()),

@@ -7,7 +7,7 @@ and it must do so with the same error envelope every time.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
@@ -59,7 +59,7 @@ def test_token_signed_with_wrong_secret_is_rejected(client):
 
 
 def test_expired_token_is_rejected(client):
-    past = datetime.now(timezone.utc) - timedelta(minutes=5)
+    past = datetime.now(UTC) - timedelta(minutes=5)
     expired = jwt.encode(
         {"sub": "1", "exp": int(past.timestamp())},
         JWT_SECRET,

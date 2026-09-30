@@ -1,0 +1,78 @@
+name: CI
+
+# Static checks plus the full test suite against a real PostgreSQL, on every
+# push and pull request to main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push supersedes an in-flight run for the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint + tests (Python 3.11)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: swibit
+          POSTGRES_PASSWORD: swibit
+          POSTGRES_DB: swibit_catalog
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U swibit -d swibit_catalog"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # A service container is reachable on localhost in CI (not `db`).
+      DATABASE_URL: postgresql+psycopg://swibit:swibit@localhost:5432/swibit_catalog
+      TEST_DATABASE_URL: postgresql+psycopg://swibit:swibit@localhost:5432/swibit_catalog_test
+      # Throwaway value for CI only - never a real deployment secret.
+      JWT_SECRET: ci-only-secret-not-for-production-0123456789abcdef
+      JWT_EXPIRE_MINUTES: "60"
+      EXPORT_DIR: ./exports
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Static checks (ruff)
+        run: ruff check .
+
+      - name: Byte-compile every module
+        run: python -m compileall -q Main Test
+
+      - name: Apply migrations against a clean database
+        # Catches a broken migration before it ever reaches a deployment.
+        run: alembic upgrade head
+
+      - name: Verify the schema matches the models
+        # Fails if someone edits a model without writing a migration.
+        run: |
+          alembic upgrade head
+          alembic check
+
+      - name: Run the test suite
+        run: pytest
